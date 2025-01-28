@@ -25,6 +25,8 @@
         };
 
         manterTelaSempreAtiva();
+
+        document.addEventListener("contextmenu", (evento) => evento.preventDefault());
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
     <style>
@@ -53,6 +55,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            user-select: none;
         }
 
         html, body {
@@ -61,6 +64,10 @@
             background: var(--cor-fundo);
             font-family: "Roboto", sans-serif;
             user-select: none;
+        }
+
+        input, textarea {
+            user-select: text;
         }
 
         .container-principal {
@@ -95,7 +102,6 @@
             align-items: center;
             justify-content: center;
             margin-top: 0rem;
-            user-select: none;
         }
 
         .container-botoes {
