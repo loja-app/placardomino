@@ -15,8 +15,8 @@
       "type": "image/png"
     }
   ],
-  "orientation": "portrait",
-  "display": "standalone",
+  "orientation": "landscape",
+  "display": "fullscreen",
   "dir": "auto",
   "lang": "pt-BR",
   "name": "Placar Dominó",
