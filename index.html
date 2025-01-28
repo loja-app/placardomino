@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#212121" />
+    <link rel="manifest" href="/placardomino/manifest.json" />
+    <title>Placar Dominó</title>
+    <script>
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/placardomino/service-worker.js");
+        });
+    
+        const manterTelaSempreAtiva = () => {
+            let wakeLock = null;
+            const solicitarWakeLock = async () => {
+                wakeLock = await navigator.wakeLock.request("screen");
+                wakeLock.addEventListener("release", () => (wakeLock = null));
+            };
+            window.addEventListener("load", solicitarWakeLock);
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "visible") solicitarWakeLock();
+            });
+            solicitarWakeLock();
+        };
+
+        manterTelaSempreAtiva();
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --cor-fundo: #212121;
+            --cor-placar: rgba(20, 20, 20, .9);
+            --cor-sombra: rgba(0, 0, 0, .25);
+            --cor-botao: rgba(255, 255, 255, .7);
+            --cor-botao-clicado: rgba(200, 200, 200, .6);
+            --cor-botao-desfazer: rgba(255, 255, 255, .7);
+            --cor-input: rgba(255, 255, 255, .8);
+            --cor-input-foco: rgb(62, 39, 35);
+            --cor-texto-input: rgb(0, 0, 0);
+            --cor-placeholder: rgba(60, 60, 60, .9);
+            --font-size-placar: 8em;
+            --font-size-botao: 1.4rem;
+            --font-size-input: 1.2rem;
+            --padding-botao: .875rem;
+            --padding-input: .675rem;
+            --border-radius: .625rem;
+            --box-shadow: 0 .4rem .6rem var(--cor-sombra);
+            --transition: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: var(--cor-fundo);
+            font-family: "Roboto", sans-serif;
+            user-select: none;
+        }
+
+        .container-principal {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: .525rem;
+            gap: .525rem;
+        }
+
+        .cartao-dupla {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            flex: 1;
+            gap: 0;
+        }
+
+        .placar {
+            font-size: var(--font-size-placar);
+            font-weight: 600;
+            color: var(--cor-placar);
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, .24), 0 4px 8px rgba(0, 0, 0, .12);
+            width: 100%;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 0rem;
+        }
+
+        .container-botoes {
+            display: flex;
+            justify-content: space-between;
+            gap: .5rem;
+            width: 100%;
+        }
+
+        .botao {
+            flex: 1;
+            padding: var(--padding-botao);
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            font-size: var(--font-size-botao);
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color var(--transition), transform var(--transition);
+            -webkit-tap-highlight-color: transparent;
+            background-color: var(--cor-botao);
+        }
+
+        .botao:active {
+            background-color: var(--cor-botao-clicado);
+            transform: scale(.95);
+        }
+
+        .botao-pontos {
+            font-size: 2rem;
+            line-height: 1;
+            padding: var(--padding-botao);
+        }
+
+        .botao-desfazer {
+            background-color: var(--cor-botao-desfazer);
+            font-size: var(--font-size-botao);
+        }
+
+        .botao-desfazer svg {
+            width: 1.6rem;
+            height: 1.6rem;
+            display: block;
+            margin: 0 auto;
+            pointer-events: none;
+        }
+
+        button:focus {
+            outline: none;
+        }
+
+        @media (orientation: landscape) {
+            .container-principal {
+                flex-direction: row;
+            }
+        }
+
+        .dupla-1 {
+            background: #90CAF9;
+        }
+
+        .dupla-2 {
+            background: #EF9A9A;
+        }
+
+        .input-nome-equipe {
+            width: 100%;
+            padding: var(--padding-input);
+            border: none;
+            border-bottom: 1px solid var(--cor-placeholder);
+            background-color: transparent;
+            font-size: var(--font-size-input);
+            font-weight: 800;
+            color: var(--cor-texto-input);
+            transition: border-color var(--transition);
+            line-height: 2rem;
+            letter-spacing: 0.05rem;
+        }
+
+        .input-nome-equipe:focus,
+        .input-nome-equipe:not(:placeholder-shown) {
+            border-bottom: 2px solid var(--cor-input-foco);
+            outline: none;
+        }
+
+        .input-nome-equipe::placeholder {
+            color: var(--cor-placeholder);
+            font-size: var(--font-size-input);
+        }
+
+        .container-nome-desfazer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            gap: .5rem;
+        }
+
+        .container-pontos {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .botao:disabled {
+            cursor: not-allowed;
+            opacity: .5;
+            transform: none;
+            pointer-events: none;
+            transition: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-principal" id="container-principal"></div>
+    <script>
+        const validarNome = (nome) => /^[A-Za-z0-9À-ÿ ./_-]*$/.test(nome);
+
+        const tratarNomeInput = (evento) => {
+            const nome = evento.target.value.toUpperCase();
+            if (!validarNome(nome)) evento.target.value = nome.slice(0, -1);
+            else evento.target.value = nome;
+        };
+
+        const salvarNomeEquipe = (nome, equipe) => localStorage.setItem(equipe, nome);
+        const carregarNomeEquipe = (equipe) => localStorage.getItem(equipe) || "";
+
+        const criarBotaoPontos = (pontos) => {
+            const botaoPontos = document.createElement("button");
+            botaoPontos.classList.add("botao", "botao-pontos");
+            botaoPontos.dataset.pontos = pontos;
+            botaoPontos.textContent = pontos;
+            return botaoPontos;
+        };
+
+        const criarGerenciadorDupla = (seletor, equipe) => {
+            const dupla = document.querySelector(seletor);
+            const inputNome = dupla.querySelector(".input-nome-equipe");
+            const botoesPontos = dupla.querySelectorAll(".botao-pontos");
+            const botaoDesfazer = dupla.querySelector(".botao-desfazer");
+            const placarElement = dupla.querySelector(".placar");
+            let placar = 0;
+            const historicoPontos = [];
+
+            inputNome.value = carregarNomeEquipe(equipe);
+            inputNome.addEventListener("input", (event) => {
+                tratarNomeInput(event);
+                salvarNomeEquipe(event.target.value, equipe);
+            });
+
+            const atualizarInterface = () => {
+                placarElement.textContent = placar;
+                botoesPontos.forEach((botao) => {
+                    const pontos = parseInt(botao.dataset.pontos, 10);
+                    botao.disabled = placar + pontos > 995;
+                });
+                botaoDesfazer.disabled = placar === 0;
+            };
+
+            const adicionarPontos = (pontos) => {
+                if (placar + pontos <= 995) {
+                    historicoPontos.push(pontos);
+                    placar += pontos;
+                    atualizarInterface();
+                }
+            };
+
+            const desfazerUltimaAcao = () => {
+                if (historicoPontos.length > 0) {
+                    placar -= historicoPontos.pop();
+                    atualizarInterface();
+                }
+            };
+
+            botoesPontos.forEach((botao) => {
+                botao.addEventListener("click", () => adicionarPontos(parseInt(botao.dataset.pontos, 10)));
+            });
+
+            botaoDesfazer.addEventListener("click", desfazerUltimaAcao);
+            atualizarInterface();
+        };
+
+        const criarCardDupla = (classe, nomeEquipe) => {
+            const card = document.createElement("div");
+            card.classList.add("cartao-dupla", classe);
+
+            const containerNomeDesfazer = document.createElement("div");
+            containerNomeDesfazer.classList.add("container-nome-desfazer");
+
+            const inputNome = document.createElement("input");
+            inputNome.classList.add("input-nome-equipe");
+            inputNome.placeholder = "Nome";
+            inputNome.value = carregarNomeEquipe(nomeEquipe);
+            containerNomeDesfazer.appendChild(inputNome);
+
+            const botaoDesfazer = document.createElement("button");
+            botaoDesfazer.classList.add("botao", "botao-desfazer");
+            botaoDesfazer.innerHTML = `<svg fill="#000000" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9,16 C9.85216986,16 10.2974338,15.0144864 9.78322518,14.3774732 L9.70710678,14.2928932 L7.41602684,12.0006549 C8.6852851,10.797551 10.6983085,10 13,10 C16.918278,10 20,12.3112915 20,15 C20,15.5522847 20.4477153,16 21,16 C21.5522847,16 22,15.5522847 22,15 C22,11.0612915 17.918278,8 13,8 C10.1933072,8 7.65904665,8.99693838 6.00030879,10.5849581 L3.70710678,8.29289322 C3.1045317,7.69031813 2.09281919,8.07233231 2.00598327,8.88636906 L2,9 L2,15 C2,15.5128358 2.38604019,15.9355072 2.88337887,15.9932723 L3,16 L9,16 Z" /></svg>`;
+            containerNomeDesfazer.appendChild(botaoDesfazer);
+
+            card.appendChild(containerNomeDesfazer);
+
+            const placarElement = document.createElement("div");
+            placarElement.classList.add("placar");
+            placarElement.textContent = "0";
+
+            const containerBotoes = document.createElement("div");
+            containerBotoes.classList.add("container-botoes");
+
+            const botoesPontos = [5, 10, 20, 50];
+            botoesPontos.forEach((pontos) => {
+                const botaoPontos = criarBotaoPontos(pontos);
+                containerBotoes.appendChild(botaoPontos);
+            });
+
+            card.appendChild(placarElement);
+            card.appendChild(containerBotoes);
+
+            return card;
+        };
+
+        const inicializar = () => {
+            const containerPrincipal = document.getElementById('container-principal');
+            const dupla1 = criarCardDupla('dupla-1', 'dupla-1');
+            const dupla2 = criarCardDupla('dupla-2', 'dupla-2');
+            containerPrincipal.appendChild(dupla1);
+            containerPrincipal.appendChild(dupla2);
+
+            criarGerenciadorDupla(".dupla-1", "dupla-1");
+            criarGerenciadorDupla(".dupla-2", "dupla-2");
+        };
+
+        inicializar();
+    </script>
+</body>
+</html>
